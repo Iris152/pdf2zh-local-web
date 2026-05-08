@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PDF2ZH Local</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="m5 8 6 6" />
+            <path d="m4 14 6-6 2-3" />
+            <path d="M2 5h12" />
+            <path d="M7 2h1" />
+            <path d="m22 22-5-10-5 10" />
+            <path d="M14 18h6" />
+          </svg>
+        </span>
+        <div>
+          <h1>PDF2ZH Local</h1>
+          <p>本地 PDF 论文翻译工具</p>
+        </div>
+      </div>
+      <div class="engine-status" id="engineStatus">
+        <span class="status-dot"></span>
+        <span>检测本地引擎...</span>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section class="panel setup-panel" aria-labelledby="setupTitle">
+        <div class="panel-heading">
+          <div>
+            <h2 id="setupTitle">上传与设置</h2>
+            <p>选择 PDF 后启动翻译，默认生成单语中文和中英对照两个文件。</p>
+          </div>
+        </div>
+
+        <form id="translateForm">
+          <label class="upload-zone" id="dropZone">
+            <input id="pdfFile" name="file" type="file" accept="application/pdf,.pdf" required />
+            <span class="upload-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 13v8" />
+                <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
+                <path d="m8 17 4-4 4 4" />
+              </svg>
+            </span>
+            <strong>拖拽 PDF 到这里，或点击选择文件</strong>
+            <span id="fileHint">支持 .pdf 文件</span>
+          </label>
+
+          <div class="selected-file" id="selectedFile" hidden>
+            <span class="file-badge">PDF</span>
+            <div>
+              <strong id="fileName"></strong>
+              <span id="fileSize"></span>
+            </div>
+          </div>
+
+          <div class="field-grid">
+            <label class="field">
+              <span>翻译服务</span>
+              <select id="service" name="service">
+                <option value="google" selected>Google（默认）</option>
+                <option value="openai">OpenAI 兼容服务</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>并发线程</span>
+              <input name="thread_count" type="number" min="1" max="8" value="2" />
+            </label>
+
+            <label class="field">
+              <span>页码范围（可选）</span>
+              <input name="pages" type="text" placeholder="例如 1-3 或 1,5,8" />
+            </label>
+
+            <label class="field field-wide">
+              <span>输出根目录</span>
+              <input id="outputDir" name="output_dir" type="text" value="E:\Download\PDF2ZH_Output" />
+            </label>
+          </div>
+
+          <section class="advanced" id="openaiSettings" hidden>
+            <div class="advanced-title">OpenAI 兼容服务</div>
+            <div class="field-grid">
+              <label class="field field-wide">
+                <span>API 基础地址</span>
+                <input name="openai_base_url" type="url" placeholder="https://api.openai.com/v1" />
+              </label>
+              <label class="field">
+                <span>API Key</span>
+                <input name="openai_api_key" type="password" autocomplete="off" placeholder="sk-..." />
+              </label>
+              <label class="field">
+                <span>模型</span>
+                <input name="openai_model" type="text" placeholder="gpt-4o-mini" />
+              </label>
+            </div>
+          </section>
+
+          <div class="options-row">
+            <label><input name="compatible" type="checkbox" /> PDF/A 兼容模式</label>
+            <label><input name="ignore_cache" type="checkbox" /> 忽略翻译缓存</label>
+          </div>
+
+          <button class="primary-button" id="submitButton" type="submit">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="m8 5 11 7-11 7V5Z" />
+            </svg>
+            开始翻译
+          </button>
+        </form>
+      </section>
+
+      <section class="panel status-panel" aria-labelledby="statusTitle">
+        <div class="panel-heading">
+          <div>
+            <h2 id="statusTitle">任务状态</h2>
+            <p id="jobMeta">等待上传 PDF。</p>
+          </div>
+          <span class="state-pill" id="statePill">就绪</span>
+        </div>
+
+        <div class="progress-card">
+          <div class="progress-header">
+            <strong id="stageText">未开始</strong>
+            <span id="progressText">0%</span>
+          </div>
+          <div class="progress-track" aria-label="翻译进度">
+            <div id="progressBar"></div>
+          </div>
+        </div>
+
+        <section class="result-section">
+          <h3>输出文件</h3>
+          <div class="result-list" id="resultList">
+            <div class="empty-state">翻译完成后会在这里显示下载按钮。</div>
+          </div>
+          <p class="output-path" id="outputPath"></p>
+        </section>
+
+        <section class="log-section">
+          <div class="log-heading">
+            <h3>运行日志</h3>
+            <button class="ghost-button" id="copyLog" type="button">复制日志</button>
+          </div>
+          <pre id="logBox">等待任务开始。</pre>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
