@@ -12,8 +12,10 @@ $healthUrl = "http://127.0.0.1:$port/api/health"
 
 $logDir = Join-Path $env:PDF2ZH_JOB_ROOT "service-logs"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
-$stdoutLog = Join-Path $logDir "server.launch.log"
-$stderrLog = Join-Path $logDir "server.launch.err.log"
+$stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$stdoutLog = Join-Path $logDir "server-$stamp.log"
+$stderrLog = Join-Path $logDir "server-$stamp.err.log"
+$serveScript = Join-Path $appDir "scripts\serve.ps1"
 
 function Test-Pdf2zhLocalHealth {
     try {
@@ -65,15 +67,20 @@ if (-not (Test-Path -LiteralPath $Pdf2zhExe)) {
     throw "pdf2zh not found: $Pdf2zhExe. Run .\install.ps1 first."
 }
 
+if (-not (Test-Path -LiteralPath $serveScript)) {
+    throw "Server launcher not found: $serveScript"
+}
+
 if (-not (Test-Pdf2zhLocalHealth)) {
     $existingPort = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
     if ($existingPort) {
         throw "Port $port is already in use, but it is not responding as PDF2ZH Local."
     }
 
+    $powershellArgs = "-NoProfile -ExecutionPolicy Bypass -File `"$serveScript`" -Port $port"
     Start-Process `
-        -FilePath $Pdf2zhPython `
-        -ArgumentList @("-m", "uvicorn", "app:app", "--host", "127.0.0.1", "--port", "$port", "--app-dir", $appDir) `
+        -FilePath "powershell.exe" `
+        -ArgumentList $powershellArgs `
         -WorkingDirectory $appDir `
         -WindowStyle Hidden `
         -RedirectStandardOutput $stdoutLog `

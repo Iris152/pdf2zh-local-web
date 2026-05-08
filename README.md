@@ -79,6 +79,8 @@ http://127.0.0.1:7861
 
 后台启动日志位于 `PDF2ZH_JOB_ROOT` 下的 `service-logs` 目录，例如 `G:\CodexOutputs\pdf2zh-web-jobs\service-logs`。
 
+双击启动会把后端服务放到后台运行，所以关闭浏览器不会停止服务。再次双击会复用已经运行的服务。
+
 ## 使用
 
 1. 打开网页后上传英文论文 PDF。
