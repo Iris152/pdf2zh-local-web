@@ -1,3 +1,7 @@
+param(
+    [switch]$NoBrowser
+)
+
 $ErrorActionPreference = "Stop"
 
 $appDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -22,18 +26,35 @@ function Test-Pdf2zhLocalHealth {
 }
 
 function Open-Pdf2zhLocalBrowser {
-    try {
-        Start-Process -FilePath "explorer.exe" -ArgumentList $url
-    }
-    catch {
-        $edge = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-        if (Test-Path -LiteralPath $edge) {
-            Start-Process -FilePath $edge -ArgumentList $url
+    $openers = @(
+        { Start-Process -FilePath $url },
+        { Start-Process -FilePath "rundll32.exe" -ArgumentList @("url.dll,FileProtocolHandler", $url) },
+        { Start-Process -FilePath "explorer.exe" -ArgumentList $url }
+    )
+
+    foreach ($opener in $openers) {
+        try {
+            & $opener
+            return
         }
-        else {
-            throw
+        catch {
         }
     }
+
+    $browserPaths = @(
+        "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+        "C:\Program Files\Google\Chrome\Application\chrome.exe",
+        "C:\Program Files\Mozilla Firefox\firefox.exe"
+    )
+
+    foreach ($browser in $browserPaths) {
+        if (Test-Path -LiteralPath $browser) {
+            Start-Process -FilePath $browser -ArgumentList $url
+            return
+        }
+    }
+
+    throw "Could not open browser automatically. Open $url manually."
 }
 
 if (-not (Test-Path -LiteralPath $Pdf2zhPython)) {
@@ -73,4 +94,8 @@ if (-not (Test-Pdf2zhLocalHealth)) {
     }
 }
 
-Open-Pdf2zhLocalBrowser
+if (-not $NoBrowser) {
+    Open-Pdf2zhLocalBrowser
+}
+
+Write-Host "PDF2ZH Local is running at $url"

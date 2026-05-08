@@ -71,6 +71,14 @@ http://127.0.0.1:7861
 .\run.ps1
 ```
 
+如果双击启动后浏览器没有自动弹出，可以手动打开：
+
+```text
+http://127.0.0.1:7861
+```
+
+后台启动日志位于 `PDF2ZH_JOB_ROOT` 下的 `service-logs` 目录，例如 `G:\CodexOutputs\pdf2zh-web-jobs\service-logs`。
+
 ## 使用
 
 1. 打开网页后上传英文论文 PDF。
